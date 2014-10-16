@@ -1,4 +1,4 @@
 author: jason@waldrip.net
 description: Git clone that clones into a common path
 settings:
-  build: make install
+  build: apt-get -y install cmake && make install
