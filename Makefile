@@ -7,6 +7,6 @@ install: get-dependencies
 	go install
 
 get-dependencies:
-	go get $(GIT2GO)
+	go get $(GIT2GO) > /dev/null || true
 	sh -c "cd $(GOPATH)/src/$(GIT2GO) && git submodule update --init"
 	make -C $(GOPATH)/src/$(GIT2GO) install
