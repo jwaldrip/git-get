@@ -1,9 +1,4 @@
 author: jason@waldrip.net
 description: Git clone that clones into a common path
-filesets:
-  excludes:
-    - \.git
 settings:
-  targetdir: ""
   build: make install
-  outfiles: git-get
