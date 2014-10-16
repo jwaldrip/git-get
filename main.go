@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 
-	git "github.com/libgit2/git2go"
-
 	"github.com/jwaldrip/odin/cli"
+	git "github.com/libgit2/git2go"
 )
 
 var app = cli.New("0.0.1", "clone a repo like go get", func(c cli.Command) {

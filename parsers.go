@@ -24,5 +24,14 @@ func parsePath(u *url.URL) string {
 	if p[len(p)-4:] == ".git" {
 		p = string(p[:len(p)-4])
 	}
-	return path.Join(os.Getenv("GOPATH"), "src", u.Host, p)
+	basePath := "/tmp"
+	switch {
+	case os.Getenv("GITPATH") != "":
+		basePath = os.Getenv("GITPATH")
+	case os.Getenv("GOPATH") != "":
+		basePath = path.Join(os.Getenv("GOPATH"), "src")
+	default:
+		exitWithMsg("missing GITPATH or GOPATH environment variable")
+	}
+	return path.Join(basePath, u.Host, p)
 }
