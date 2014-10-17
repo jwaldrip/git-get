@@ -14,7 +14,7 @@ func getAuthCallback(u *url.URL) git.CredentialsCallback {
 		i, cred := git.NewCredDefault()
 
 		if allowedTypes&git.CredTypeUserpassPlaintext != 0 {
-			i, cred = git.NewCredUserpassPlaintext(getInput("username"), getInput("password"))
+			i, cred = git.NewCredUserpassPlaintext(getInput("username"), getMaskedInput("password"))
 			return i, &cred
 		}
 		if allowedTypes&git.CredTypeSshKey != 0 {
