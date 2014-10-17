@@ -15,6 +15,8 @@ var app = cli.New(version, "clone a repo into a common path", func(c cli.Command
 	p := parsePath(u)
 	fmt.Printf("Cloning into '%s'...\n", p)
 	_, err := git.Clone(u.String(), p, cloneOptionsForURL(u))
+	fmt.Println("")
+	fmt.Println("Done!")
 	exitIfErr(err)
 })
 
