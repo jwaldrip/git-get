@@ -3,6 +3,7 @@ Git clone that clones into a common path. It was inspired by `go get` and follow
 
 ## Installation
 ```
+$ brew tap jwaldrip/utils
 $ brew install git-get
 ```
 
