@@ -7,7 +7,7 @@ import (
 	git "github.com/libgit2/git2go"
 )
 
-var app = cli.New("0.0.1", "clone a repo like go get", func(c cli.Command) {
+var app = cli.New(version, "clone a repo into a common path", func(c cli.Command) {
 	if len(c.Args()) > 0 {
 		exitWithMsg("too many arguments")
 	}

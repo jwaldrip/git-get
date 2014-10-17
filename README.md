@@ -9,7 +9,9 @@ $ brew install git-get
 ### From Source
 
 ```
-$ go get -u github.com/jwaldrip/git-get
+$ git checkout git@github.com:jwaldrip/git-get.git
+$ cd git-get
+$ make install
 ```
 
 ## Setup

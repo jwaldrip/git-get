@@ -1,4 +1,0 @@
-author: jason@waldrip.net
-description: Git clone that clones into a common path
-settings:
-  build: apt-get -y install cmake pkg-config gcc && make install

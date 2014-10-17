@@ -1,7 +1,10 @@
 GIT2GO=github.com/libgit2/git2go
 
 build: get-dependencies
-	go build .
+	go build -o ./bin/git-get
+
+build-all: get-dependencies
+	sh build-all.sh
 
 install: get-dependencies
 	go install
