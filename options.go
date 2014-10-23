@@ -8,9 +8,10 @@ import (
 
 func cloneOptionsForURL(u *url.URL) *git.CloneOptions {
 	remoteCallbacks := &git.RemoteCallbacks{
-		SidebandProgressCallback: remoteSidebandCallback,
-		TransferProgressCallback: transferProgressCb,
-		CredentialsCallback:      getAuthCallback(u),
+		SidebandProgressCallback: sidebandProgressCallback,
+		TransferProgressCallback: transferProgressCallback,
+		CredentialsCallback:      buildCredentialsCallback(u),
+		CertificateCheckCallback: buildCertificateCheckCallback(u),
 	}
 	return &git.CloneOptions{
 		Bare:            false,
