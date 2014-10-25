@@ -9,7 +9,7 @@ Git clone that clones into a common path. It was inspired by `go get` and follow
 * OpenSSL
 * LibSSL2
 * cmake
-* pkg-config=
+* pkg-config
 
 ## Installation
 
