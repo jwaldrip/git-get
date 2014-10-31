@@ -14,7 +14,7 @@ Git clone that clones into a common path. It was inspired by `go get` and follow
 ## Installation
 
 ```
-$ git checkout git@github.com:jwaldrip/git-get.git
+$ git clone git@github.com:jwaldrip/git-get.git
 $ cd git-get
 $ make install
 ```
