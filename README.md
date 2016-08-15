@@ -13,6 +13,14 @@ Git clone that clones into a common path. It was inspired by `go get` and follow
 
 ## Installation
 
+### Install with Homebrew (Mac)
+
+```
+$ brew install jwaldrip/utils/git-get
+```
+
+### Manual Install
+
 ```
 $ git clone git@github.com:jwaldrip/git-get.git
 $ cd git-get
