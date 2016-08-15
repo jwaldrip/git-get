@@ -15,7 +15,7 @@ func calcPercent(partial, total uint) uint {
 }
 
 func buildCertificateCheckCallback(u *url.URL) git.CertificateCheckCallback {
-	return func(cert *git.Certificate, valid bool, hostname string) int {
+	return func(cert *git.Certificate, valid bool, hostname string) git.ErrorCode {
 		if u.Scheme != "ssh" && valid == false {
 			exitWithMsg("host key check failed for:", hostname)
 		}
@@ -24,16 +24,16 @@ func buildCertificateCheckCallback(u *url.URL) git.CertificateCheckCallback {
 }
 
 func buildCredentialsCallback(u *url.URL) git.CredentialsCallback {
-	return func(url, usernameFromURL string, allowedTypes git.CredType) (int, *git.Cred) {
+	return func(url, usernameFromURL string, allowedTypes git.CredType) (git.ErrorCode, *git.Cred) {
 		i, cred := git.NewCredDefault()
 
 		if allowedTypes&git.CredTypeUserpassPlaintext != 0 {
 			i, cred = git.NewCredUserpassPlaintext(getInput("username"), getMaskedInput("password"))
-			return i, &cred
+			return git.ErrorCode(i), &cred
 		}
 		if allowedTypes&git.CredTypeSshKey != 0 {
 			i, cred = git.NewCredSshKeyFromAgent(u.User.Username())
-			return i, &cred
+			return git.ErrorCode(i), &cred
 		}
 		if allowedTypes&git.CredTypeSshCustom != 0 {
 			exitWithMsg("custom ssh not implemented")
@@ -43,16 +43,16 @@ func buildCredentialsCallback(u *url.URL) git.CredentialsCallback {
 			exitWithMsg("invalid cred type")
 		}
 
-		return i, &cred
+		return git.ErrorCode(i), &cred
 	}
 }
 
-func sidebandProgressCallback(str string) int {
+func sidebandProgressCallback(str string) git.ErrorCode {
 	fmt.Printf("\rremote: %v", str)
 	return 0
 }
 
-func transferProgressCallback(stats git.TransferProgress) int {
+func transferProgressCallback(stats git.TransferProgress) git.ErrorCode {
 	i.stats = stats
-	return i.update()
+	return git.ErrorCode(i.update())
 }
