@@ -7,14 +7,25 @@ import (
 	"strings"
 )
 
-func parseURL(str string) *url.URL {
+func parseURL(str string, defaultHost string, ssh bool) *url.URL {
 	u, err := url.Parse(str)
 	exitIfErrWithMsg(err, "invalid url")
 	if u.Scheme == "" {
-		u = parseURL("ssh://" + str)
+		u.Scheme = "https"
 		parts := strings.Split(u.Host, ":")
-		u.Host = parts[0]
-		u.Path = path.Join(parts[1], u.Path)
+		if len(parts) > 1 {
+			u.Host= parts[0]
+			u.Path = path.Join(parts[1], u.Path)
+		}
+	}
+	if u.Host == "" {
+		u.Host = defaultHost
+	}
+	if ssh {
+		if (u.User == nil) {
+			u.User = url.User("git")
+		}
+		u.Scheme = "ssh"
 	}
 	return u
 }
