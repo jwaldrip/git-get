@@ -1,16 +1,6 @@
 # Git Get
 Git clone that clones into a common path. It was inspired by `go get` and follows a similar folder structure.
 
-## Prerequisites
-> Caveat: Installing from source is only neccesary until I can get homebrew working.
-
-* Go
-* GCC
-* OpenSSL
-* LibSSL2
-* cmake
-* pkg-config
-
 ## Installation
 
 ### Install with Homebrew (Mac)
@@ -20,6 +10,15 @@ $ brew install jwaldrip/utils/git-get
 ```
 
 ### Manual Install
+
+#### Prerequisites
+
+* Go
+* GCC
+* OpenSSL
+* LibSSL2
+* cmake
+* pkg-config
 
 ```
 $ git clone git@github.com:jwaldrip/git-get.git
