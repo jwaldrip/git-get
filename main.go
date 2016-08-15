@@ -17,7 +17,7 @@ func init() {
 	app.DefineBoolFlag("bitbucket", false, "lookup with bitbucket.")
 	app.DefineBoolFlag("github", false, "lookup with github.")
 	app.AliasFlag('f', "force")
-	app.AliasFlag('h', "host")
+	app.AliasFlag('H', "host")
 	app.AliasFlag('S', "ssh")
 	app.DefineParams("url")
 }
