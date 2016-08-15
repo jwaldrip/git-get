@@ -9,12 +9,6 @@
 			"revisionTime": "2016-08-13T19:06:34Z"
 		},
 		{
-			"path": "github.com/jwaldrip/git-get",
-			"revision": "d38ade4855d623b4f684a34277602ac8d92c7a3c",
-			"revisionTime": "2014-10-31T22:03:50Z",
-			"tree": true
-		},
-		{
 			"checksumSHA1": "CaQy5Xjj191855ZpghoWDwUXmxs=",
 			"path": "github.com/jwaldrip/odin/cli",
 			"revision": "1ff1e7d0da9ed4a829143e6ea0611ac567844647",
