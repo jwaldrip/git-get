@@ -48,6 +48,19 @@ $ echo "export GITPATH=$HOME/dev" > .zshrc
 $ git get [repo-url]
 ```
 
+### Auto host
+By default, if no host is specified, git-get will lookup repos by the provided
+path on github. You can use the following flags to override this:
+
+* `--bitbucket`
+* `--github`
+* `--host {hostname}`
+* `-h {hostname}`
+
+### Force SSH
+By default git-get will either use the scheme passed, or default to https:, to
+use SSH use the `--ssh` or `-S` flag.
+
 ## Example
 
 ```

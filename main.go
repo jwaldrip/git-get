@@ -11,8 +11,14 @@ import (
 var app = cli.New(version, "clone a repo into a common path", get)
 
 func init() {
-	app.DefineBoolFlag("force", false, "overwrite existing directory")
+	app.DefineStringFlag("host", "github.com", "define the host for path based queries.")
+	app.DefineBoolFlag("force", false, "overwrite existing directory.")
+	app.DefineBoolFlag("ssh", false, "use ssh for the connection.")
+	app.DefineBoolFlag("bitbucket", false, "lookup with bitbucket.")
+	app.DefineBoolFlag("github", false, "lookup with github.")
 	app.AliasFlag('f', "force")
+	app.AliasFlag('h', "host")
+	app.AliasFlag('S', "ssh")
 	app.DefineParams("url")
 }
 
@@ -26,7 +32,15 @@ func get(c cli.Command) {
 	}
 
 	// Vars
-	repoURL := parseURL(c.Param("url").String())
+	var host string
+	if (c.Flag("bitbucket").Get() == true) {
+		host = "bitbucket.org"
+	} else if (c.Flag("github").Get() == true){
+		host = "github.com"
+	} else {
+		host = c.Flag("host").String()
+	}
+	repoURL := parseURL(c.Param("url").String(), host, c.Flag("ssh").Get() == true)
 	clonePath := parsePath(repoURL)
 	cloneOpts := cloneOptionsForURL(repoURL)
 
@@ -36,7 +50,7 @@ func get(c cli.Command) {
 	}
 
 	// Clone
-	fmt.Printf("Cloning into '%s'...\n", clonePath)
+	fmt.Printf("Cloning '%s' into '%s'...\n", repoURL, clonePath)
 	_, err := git.Clone(repoURL.String(), clonePath, cloneOpts)
 	exitIfErr(err)
 	fmt.Println("\nDone!")
