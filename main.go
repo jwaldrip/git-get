@@ -1,7 +1,7 @@
 package main
 
-import gitget "github.com/jwaldrip/git-get/src"
+import "github.com/jwaldrip/git-get/command"
 
 func main() {
-	gitget.Start()
+	command.Start()
 }

@@ -1,4 +1,4 @@
-package gitget
+package command
 
 import (
 	"os"
