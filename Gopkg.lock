@@ -30,12 +30,6 @@
 
 [[projects]]
   branch = "master"
-  name = "github.com/libgit2/git2go"
-  packages = ["."]
-  revision = "e57025a372f882df8ee7dbc47dc7d4ec6eddcc55"
-
-[[projects]]
-  branch = "master"
   name = "github.com/mitchellh/go-homedir"
   packages = ["."]
   revision = "b8bc1bf767474819792c23f32d8286a45736f1c6"
@@ -184,6 +178,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "a57bf3836daa7065498467a9a28531e5a59d6c4f87f19e529121a0507aa17243"
+  inputs-digest = "10782d32baaa7cd58991da4bc50ebcacc8f0f7b7b7b8c30ddf0ffb5dfa959991"
   solver-name = "gps-cdcl"
   solver-version = 1

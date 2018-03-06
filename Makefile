@@ -5,4 +5,4 @@ install: get-dependencies
 	go install
 
 get-dependencies:
-	dep ensure
+	dep ensure -v
