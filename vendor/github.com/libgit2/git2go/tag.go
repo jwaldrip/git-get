@@ -17,23 +17,33 @@ type Tag struct {
 	cast_ptr *C.git_tag
 }
 
+func (t *Tag) AsObject() *Object {
+	return &t.Object
+}
+
 func (t Tag) Message() string {
-	return C.GoString(C.git_tag_message(t.cast_ptr))
+	ret := C.GoString(C.git_tag_message(t.cast_ptr))
+	runtime.KeepAlive(t)
+	return ret
 }
 
 func (t Tag) Name() string {
-	return C.GoString(C.git_tag_name(t.cast_ptr))
+	ret := C.GoString(C.git_tag_name(t.cast_ptr))
+	runtime.KeepAlive(t)
+	return ret
 }
 
 func (t Tag) Tagger() *Signature {
 	cast_ptr := C.git_tag_tagger(t.cast_ptr)
-	return newSignatureFromC(cast_ptr)
+	ret := newSignatureFromC(cast_ptr)
+	runtime.KeepAlive(t)
+	return ret
 }
 
 func (t Tag) Target() *Object {
 	var ptr *C.git_object
 	ret := C.git_tag_target(&ptr, t.cast_ptr)
-
+	runtime.KeepAlive(t)
 	if ret != 0 {
 		return nil
 	}
@@ -42,19 +52,22 @@ func (t Tag) Target() *Object {
 }
 
 func (t Tag) TargetId() *Oid {
-	return newOidFromC(C.git_tag_target_id(t.cast_ptr))
+	ret := newOidFromC(C.git_tag_target_id(t.cast_ptr))
+	runtime.KeepAlive(t)
+	return ret
 }
 
 func (t Tag) TargetType() ObjectType {
-	return ObjectType(C.git_tag_target_type(t.cast_ptr))
+	ret := ObjectType(C.git_tag_target_type(t.cast_ptr))
+	runtime.KeepAlive(t)
+	return ret
 }
 
 type TagsCollection struct {
 	repo *Repository
 }
 
-func (c *TagsCollection) Create(
-	name string, commit *Commit, tagger *Signature, message string) (*Oid, error) {
+func (c *TagsCollection) Create(name string, obj Objecter, tagger *Signature, message string) (*Oid, error) {
 
 	oid := new(Oid)
 
@@ -70,12 +83,13 @@ func (c *TagsCollection) Create(
 	}
 	defer C.git_signature_free(taggerSig)
 
-	ctarget := commit.ptr
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	ret := C.git_tag_create(oid.toC(), c.repo.ptr, cname, ctarget, taggerSig, cmessage, 0)
+	o := obj.AsObject()
+	ret := C.git_tag_create(oid.toC(), c.repo.ptr, cname, o.ptr, taggerSig, cmessage, 0)
+	runtime.KeepAlive(c)
+	runtime.KeepAlive(obj)
 	if ret < 0 {
 		return nil, MakeGitError(ret)
 	}
@@ -91,6 +105,7 @@ func (c *TagsCollection) Remove(name string) error {
 	defer C.free(unsafe.Pointer(cname))
 
 	ret := C.git_tag_delete(c.repo.ptr, cname)
+	runtime.KeepAlive(c)
 	if ret < 0 {
 		return MakeGitError(ret)
 	}
@@ -98,7 +113,7 @@ func (c *TagsCollection) Remove(name string) error {
 	return nil
 }
 
-// CreateLightweight creates a new lightweight tag pointing to a commit
+// CreateLightweight creates a new lightweight tag pointing to an object
 // and returns the id of the target object.
 //
 // The name of the tag is validated for consistency (see git_tag_create() for the rules
@@ -110,19 +125,20 @@ func (c *TagsCollection) Remove(name string) error {
 // The created tag is a simple reference and can be queried using
 // repo.References.Lookup("refs/tags/<name>"). The name of the tag (eg "v1.0.0")
 // is queried with ref.Shorthand().
-func (c *TagsCollection) CreateLightweight(name string, commit *Commit, force bool) (*Oid, error) {
+func (c *TagsCollection) CreateLightweight(name string, obj Objecter, force bool) (*Oid, error) {
 
 	oid := new(Oid)
 
 	cname := C.CString(name)
 	defer C.free(unsafe.Pointer(cname))
 
-	ctarget := commit.ptr
-
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	err := C.git_tag_create_lightweight(oid.toC(), c.repo.ptr, cname, ctarget, cbool(force))
+	o := obj.AsObject()
+	err := C.git_tag_create_lightweight(oid.toC(), c.repo.ptr, cname, o.ptr, cbool(force))
+	runtime.KeepAlive(c)
+	runtime.KeepAlive(obj)
 	if err < 0 {
 		return nil, MakeGitError(err)
 	}
@@ -139,6 +155,7 @@ func (c *TagsCollection) List() ([]string, error) {
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_tag_list(&strC, c.repo.ptr)
+	runtime.KeepAlive(c)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
@@ -162,6 +179,7 @@ func (c *TagsCollection) ListWithMatch(pattern string) ([]string, error) {
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_tag_list_match(&strC, patternC, c.repo.ptr)
+	runtime.KeepAlive(c)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
@@ -215,6 +233,7 @@ func (c *TagsCollection) Foreach(callback TagForeachCallback) error {
 	defer runtime.UnlockOSThread()
 
 	err := C._go_git_tag_foreach(c.repo.ptr, handle)
+	runtime.KeepAlive(c)
 	if err == C.GIT_EUSER {
 		return data.err
 	}

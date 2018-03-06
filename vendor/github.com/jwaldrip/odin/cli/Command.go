@@ -17,7 +17,6 @@ type Command interface {
 	NameAliases() map[string]string
 	Description() string
 	Version() string
-	Hidden() bool
 
 	// Flags
 	Flag(string) values.Value

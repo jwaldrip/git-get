@@ -12,11 +12,6 @@ func (cmd *CLI) LongDescription() string {
 	return strings.TrimSpace(cmd.longDescription)
 }
 
-// Hidden is the attribute the tells you if the command is hidden
-func (cmd *CLI) Hidden() bool {
-	return cmd.hidden
-}
-
 // Parent Returns the parent command
 func (cmd *CLI) Parent() Command {
 	return cmd.parent
@@ -31,11 +26,6 @@ func (cmd *CLI) Name() string {
 // description when viewing the --help for a command.
 func (cmd *CLI) SetLongDescription(desc string) {
 	cmd.longDescription = desc
-}
-
-//SetUsage lets your override the usagestring
-func (cmd *CLI) SetUsage(use func()) {
-	cmd.usage = use
 }
 
 // Version returns the command version

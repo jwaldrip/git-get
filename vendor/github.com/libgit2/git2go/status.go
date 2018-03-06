@@ -25,6 +25,7 @@ const (
 	StatusWtTypeChange    Status = C.GIT_STATUS_WT_TYPECHANGE
 	StatusWtRenamed       Status = C.GIT_STATUS_WT_RENAMED
 	StatusIgnored         Status = C.GIT_STATUS_IGNORED
+	StatusConflicted      Status = C.GIT_STATUS_CONFLICTED
 )
 
 type StatusEntry struct {
@@ -54,15 +55,17 @@ func statusEntryFromC(statusEntry *C.git_status_entry) StatusEntry {
 
 type StatusList struct {
 	ptr *C.git_status_list
+	r   *Repository
 }
 
-func newStatusListFromC(ptr *C.git_status_list) *StatusList {
+func newStatusListFromC(ptr *C.git_status_list, r *Repository) *StatusList {
 	if ptr == nil {
 		return nil
 	}
 
 	statusList := &StatusList{
 		ptr: ptr,
+		r:   r,
 	}
 
 	runtime.SetFinalizer(statusList, (*StatusList).Free)
@@ -83,14 +86,20 @@ func (statusList *StatusList) ByIndex(index int) (StatusEntry, error) {
 		return StatusEntry{}, ErrInvalid
 	}
 	ptr := C.git_status_byindex(statusList.ptr, C.size_t(index))
-	return statusEntryFromC(ptr), nil
+	entry := statusEntryFromC(ptr)
+	runtime.KeepAlive(statusList)
+
+	return entry, nil
 }
 
 func (statusList *StatusList) EntryCount() (int, error) {
 	if statusList.ptr == nil {
 		return -1, ErrInvalid
 	}
-	return int(C.git_status_list_entrycount(statusList.ptr)), nil
+	ret := int(C.git_status_list_entrycount(statusList.ptr))
+	runtime.KeepAlive(statusList)
+
+	return ret, nil
 }
 
 type StatusOpt int
@@ -160,7 +169,7 @@ func (v *Repository) StatusList(opts *StatusOptions) (*StatusList, error) {
 		return nil, MakeGitError(ret)
 	}
 
-	return newStatusListFromC(ptr), nil
+	return newStatusListFromC(ptr, v), nil
 }
 
 func (v *Repository) StatusFile(path string) (Status, error) {
@@ -172,6 +181,7 @@ func (v *Repository) StatusFile(path string) (Status, error) {
 	defer runtime.UnlockOSThread()
 
 	ret := C.git_status_file(&statusFlags, v.ptr, cPath)
+	runtime.KeepAlive(v)
 	if ret < 0 {
 		return 0, MakeGitError(ret)
 	}

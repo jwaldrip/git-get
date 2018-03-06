@@ -1,0 +1,16 @@
+language: go
+sudo: false
+go:
+  - 1.5
+  - 1.6
+  - 1.7
+  - tip
+
+install:
+  - go get golang.org/x/tools/cmd/cover
+  - go get github.com/axw/gocov/gocov
+  - go get github.com/mattn/goveralls
+
+script:
+  - make test
+  - $HOME/gopath/bin/goveralls -repotoken kTa5AZCg5teNjz64kBUI4S4gvVU7PuCaj

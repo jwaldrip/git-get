@@ -40,15 +40,19 @@ func (patch *Patch) String() (string, error) {
 	if patch.ptr == nil {
 		return "", ErrInvalid
 	}
-	var buf C.git_buf
 
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
+	var buf C.git_buf
+
 	ecode := C.git_patch_to_buf(&buf, patch.ptr)
+	runtime.KeepAlive(patch)
 	if ecode < 0 {
 		return "", MakeGitError(ecode)
 	}
+	defer C.git_buf_free(&buf)
+
 	return C.GoString(buf.ptr), nil
 }
 
@@ -65,7 +69,7 @@ func (v *Repository) PatchFromBuffers(oldPath, newPath string, oldBuf, newBuf []
 	var patchPtr *C.git_patch
 
 	oldPtr := toPointer(oldBuf)
-	newPtr := (*C.char)(toPointer(newBuf))
+	newPtr := toPointer(newBuf)
 
 	cOldPath := C.CString(oldPath)
 	defer C.free(unsafe.Pointer(cOldPath))
@@ -80,6 +84,8 @@ func (v *Repository) PatchFromBuffers(oldPath, newPath string, oldBuf, newBuf []
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_patch_from_buffers(&patchPtr, oldPtr, C.size_t(len(oldBuf)), cOldPath, newPtr, C.size_t(len(newBuf)), cNewPath, copts)
+	runtime.KeepAlive(oldBuf)
+	runtime.KeepAlive(newBuf)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}

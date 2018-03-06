@@ -3,12 +3,6 @@ package git
 /*
 #include <git2.h>
 #include <git2/sys/openssl.h>
-#cgo pkg-config: libgit2
-
-#if LIBGIT2_VER_MAJOR != 0 || LIBGIT2_VER_MINOR != 24
-# error "Invalid libgit2 version; this git2go supports libgit2 v0.24"
-#endif
-
 */
 import "C"
 import (
@@ -50,6 +44,7 @@ const (
 	ErrClassFilter     ErrorClass = C.GITERR_FILTER
 	ErrClassRevert     ErrorClass = C.GITERR_REVERT
 	ErrClassCallback   ErrorClass = C.GITERR_CALLBACK
+	ErrClassRebase     ErrorClass = C.GITERR_REBASE
 )
 
 type ErrorCode int
@@ -124,6 +119,15 @@ func init() {
 	pointerHandles = NewHandleList()
 
 	C.git_libgit2_init()
+
+	// Due to the multithreaded nature of Go and its interaction with
+	// calling C functions, we cannot work with a library that was not built
+	// with multi-threading support. The most likely outcome is a segfault
+	// or panic at an incomprehensible time, so let's make it easy by
+	// panicking right here.
+	if Features()&FeatureThreads == 0 {
+		panic("libgit2 was not built with threading support")
+	}
 
 	// This is not something we should be doing, as we may be
 	// stomping all over someone else's setup. The user should do
@@ -228,6 +232,7 @@ func ShortenOids(ids []*Oid, minlen int) (int, error) {
 			return int(ret), MakeGitError(ret)
 		}
 	}
+	runtime.KeepAlive(ids)
 	return int(ret), nil
 }
 

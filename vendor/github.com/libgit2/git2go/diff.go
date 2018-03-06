@@ -20,6 +20,7 @@ const (
 	DiffFlagBinary    DiffFlag = C.GIT_DIFF_FLAG_BINARY
 	DiffFlagNotBinary DiffFlag = C.GIT_DIFF_FLAG_NOT_BINARY
 	DiffFlagValidOid  DiffFlag = C.GIT_DIFF_FLAG_VALID_ID
+	DiffFlagExists    DiffFlag = C.GIT_DIFF_FLAG_EXISTS
 )
 
 type Delta int
@@ -34,6 +35,8 @@ const (
 	DeltaIgnored    Delta = C.GIT_DELTA_IGNORED
 	DeltaUntracked  Delta = C.GIT_DELTA_UNTRACKED
 	DeltaTypeChange Delta = C.GIT_DELTA_TYPECHANGE
+	DeltaUnreadable Delta = C.GIT_DELTA_UNREADABLE
+	DeltaConflicted Delta = C.GIT_DELTA_CONFLICTED
 )
 
 type DiffLineType int
@@ -124,14 +127,17 @@ func diffLineFromC(line *C.git_diff_line) DiffLine {
 }
 
 type Diff struct {
-	ptr *C.git_diff
+	ptr  *C.git_diff
+	repo *Repository
 }
 
 func (diff *Diff) NumDeltas() (int, error) {
 	if diff.ptr == nil {
 		return -1, ErrInvalid
 	}
-	return int(C.git_diff_num_deltas(diff.ptr)), nil
+	ret := int(C.git_diff_num_deltas(diff.ptr))
+	runtime.KeepAlive(diff)
+	return ret, nil
 }
 
 func (diff *Diff) GetDelta(index int) (DiffDelta, error) {
@@ -139,16 +145,19 @@ func (diff *Diff) GetDelta(index int) (DiffDelta, error) {
 		return DiffDelta{}, ErrInvalid
 	}
 	ptr := C.git_diff_get_delta(diff.ptr, C.size_t(index))
-	return diffDeltaFromC(ptr), nil
+	ret := diffDeltaFromC(ptr)
+	runtime.KeepAlive(diff)
+	return ret, nil
 }
 
-func newDiffFromC(ptr *C.git_diff) *Diff {
+func newDiffFromC(ptr *C.git_diff, repo *Repository) *Diff {
 	if ptr == nil {
 		return nil
 	}
 
 	diff := &Diff{
-		ptr: ptr,
+		ptr:  ptr,
+		repo: repo,
 	}
 
 	runtime.SetFinalizer(diff, (*Diff).Free)
@@ -184,6 +193,7 @@ func (diff *Diff) FindSimilar(opts *DiffFindOptions) error {
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_diff_find_similar(diff.ptr, copts)
+	runtime.KeepAlive(diff)
 	if ecode < 0 {
 		return MakeGitError(ecode)
 	}
@@ -206,15 +216,21 @@ func (stats *DiffStats) Free() error {
 }
 
 func (stats *DiffStats) Insertions() int {
-	return int(C.git_diff_stats_insertions(stats.ptr))
+	ret := int(C.git_diff_stats_insertions(stats.ptr))
+	runtime.KeepAlive(stats)
+	return ret
 }
 
 func (stats *DiffStats) Deletions() int {
-	return int(C.git_diff_stats_deletions(stats.ptr))
+	ret := int(C.git_diff_stats_deletions(stats.ptr))
+	runtime.KeepAlive(stats)
+	return ret
 }
 
 func (stats *DiffStats) FilesChanged() int {
-	return int(C.git_diff_stats_files_changed(stats.ptr))
+	ret := int(C.git_diff_stats_files_changed(stats.ptr))
+	runtime.KeepAlive(stats)
+	return ret
 }
 
 type DiffStatsFormat int
@@ -237,6 +253,7 @@ func (stats *DiffStats) String(format DiffStatsFormat,
 
 	ret := C.git_diff_stats_to_buf(&buf,
 		stats.ptr, C.git_diff_stats_format_t(format), C.size_t(width))
+	runtime.KeepAlive(stats)
 	if ret < 0 {
 		return "", MakeGitError(ret)
 	}
@@ -250,7 +267,9 @@ func (diff *Diff) Stats() (*DiffStats, error) {
 	runtime.LockOSThread()
 	defer runtime.UnlockOSThread()
 
-	if ecode := C.git_diff_get_stats(&stats.ptr, diff.ptr); ecode < 0 {
+	ecode := C.git_diff_get_stats(&stats.ptr, diff.ptr)
+	runtime.KeepAlive(diff)
+	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
 	runtime.SetFinalizer(stats, (*DiffStats).Free)
@@ -298,6 +317,7 @@ func (diff *Diff) ForEach(cbFile DiffForEachFileCallback, detail DiffDetail) err
 	defer pointerHandles.Untrack(handle)
 
 	ecode := C._go_git_diff_foreach(diff.ptr, 1, intHunks, intLines, handle)
+	runtime.KeepAlive(diff)
 	if ecode < 0 {
 		return data.Error
 	}
@@ -377,6 +397,7 @@ func (diff *Diff) Patch(deltaIndex int) (*Patch, error) {
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_patch_from_diff(&patchPtr, diff.ptr, C.size_t(deltaIndex))
+	runtime.KeepAlive(diff)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
@@ -399,6 +420,7 @@ const (
 	DiffIgnoreFilemode         DiffOptionsFlag = C.GIT_DIFF_IGNORE_FILEMODE
 	DiffIgnoreSubmodules       DiffOptionsFlag = C.GIT_DIFF_IGNORE_SUBMODULES
 	DiffIgnoreCase             DiffOptionsFlag = C.GIT_DIFF_IGNORE_CASE
+	DiffIncludeCaseChange      DiffOptionsFlag = C.GIT_DIFF_INCLUDE_CASECHANGE
 
 	DiffDisablePathspecMatch    DiffOptionsFlag = C.GIT_DIFF_DISABLE_PATHSPEC_MATCH
 	DiffSkipBinaryCheck         DiffOptionsFlag = C.GIT_DIFF_SKIP_BINARY_CHECK
@@ -415,6 +437,8 @@ const (
 	DiffShowUnmodified       DiffOptionsFlag = C.GIT_DIFF_SHOW_UNMODIFIED
 	DiffPatience             DiffOptionsFlag = C.GIT_DIFF_PATIENCE
 	DiffMinimal              DiffOptionsFlag = C.GIT_DIFF_MINIMAL
+	DiffShowBinary           DiffOptionsFlag = C.GIT_DIFF_SHOW_BINARY
+	DiffIndentHeuristic      DiffOptionsFlag = C.GIT_DIFF_INDENT_HEURISTIC
 )
 
 type DiffNotifyCallback func(diffSoFar *Diff, deltaToAdd DiffDelta, matchedPathspec string) error
@@ -533,7 +557,7 @@ func diffNotifyCb(_diff_so_far unsafe.Pointer, delta_to_add *C.git_diff_delta, m
 
 	if data != nil {
 		if data.Diff == nil {
-			data.Diff = newDiffFromC(diff_so_far)
+			data.Diff = newDiffFromC(diff_so_far, nil)
 		}
 
 		err := data.Callback(data.Diff, diffDeltaFromC(delta_to_add), C.GoString(matched_pathspec))
@@ -614,6 +638,8 @@ func (v *Repository) DiffTreeToTree(oldTree, newTree *Tree, opts *DiffOptions) (
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_diff_tree_to_tree(&diffPtr, v.ptr, oldPtr, newPtr, copts)
+	runtime.KeepAlive(oldTree)
+	runtime.KeepAlive(newTree)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
@@ -621,7 +647,7 @@ func (v *Repository) DiffTreeToTree(oldTree, newTree *Tree, opts *DiffOptions) (
 	if notifyData != nil && notifyData.Diff != nil {
 		return notifyData.Diff, nil
 	}
-	return newDiffFromC(diffPtr), nil
+	return newDiffFromC(diffPtr, v), nil
 }
 
 func (v *Repository) DiffTreeToWorkdir(oldTree *Tree, opts *DiffOptions) (*Diff, error) {
@@ -639,6 +665,7 @@ func (v *Repository) DiffTreeToWorkdir(oldTree *Tree, opts *DiffOptions) (*Diff,
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_diff_tree_to_workdir(&diffPtr, v.ptr, oldPtr, copts)
+	runtime.KeepAlive(oldTree)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
@@ -646,7 +673,7 @@ func (v *Repository) DiffTreeToWorkdir(oldTree *Tree, opts *DiffOptions) (*Diff,
 	if notifyData != nil && notifyData.Diff != nil {
 		return notifyData.Diff, nil
 	}
-	return newDiffFromC(diffPtr), nil
+	return newDiffFromC(diffPtr, v), nil
 }
 
 func (v *Repository) DiffTreeToIndex(oldTree *Tree, index *Index, opts *DiffOptions) (*Diff, error) {
@@ -669,6 +696,8 @@ func (v *Repository) DiffTreeToIndex(oldTree *Tree, index *Index, opts *DiffOpti
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_diff_tree_to_index(&diffPtr, v.ptr, oldPtr, indexPtr, copts)
+	runtime.KeepAlive(oldTree)
+	runtime.KeepAlive(index)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
@@ -676,7 +705,7 @@ func (v *Repository) DiffTreeToIndex(oldTree *Tree, index *Index, opts *DiffOpti
 	if notifyData != nil && notifyData.Diff != nil {
 		return notifyData.Diff, nil
 	}
-	return newDiffFromC(diffPtr), nil
+	return newDiffFromC(diffPtr, v), nil
 }
 
 func (v *Repository) DiffTreeToWorkdirWithIndex(oldTree *Tree, opts *DiffOptions) (*Diff, error) {
@@ -694,6 +723,7 @@ func (v *Repository) DiffTreeToWorkdirWithIndex(oldTree *Tree, opts *DiffOptions
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_diff_tree_to_workdir_with_index(&diffPtr, v.ptr, oldPtr, copts)
+	runtime.KeepAlive(oldTree)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
@@ -701,7 +731,7 @@ func (v *Repository) DiffTreeToWorkdirWithIndex(oldTree *Tree, opts *DiffOptions
 	if notifyData != nil && notifyData.Diff != nil {
 		return notifyData.Diff, nil
 	}
-	return newDiffFromC(diffPtr), nil
+	return newDiffFromC(diffPtr, v), nil
 }
 
 func (v *Repository) DiffIndexToWorkdir(index *Index, opts *DiffOptions) (*Diff, error) {
@@ -719,6 +749,7 @@ func (v *Repository) DiffIndexToWorkdir(index *Index, opts *DiffOptions) (*Diff,
 	defer runtime.UnlockOSThread()
 
 	ecode := C.git_diff_index_to_workdir(&diffPtr, v.ptr, indexPtr, copts)
+	runtime.KeepAlive(index)
 	if ecode < 0 {
 		return nil, MakeGitError(ecode)
 	}
@@ -726,7 +757,7 @@ func (v *Repository) DiffIndexToWorkdir(index *Index, opts *DiffOptions) (*Diff,
 	if notifyData != nil && notifyData.Diff != nil {
 		return notifyData.Diff, nil
 	}
-	return newDiffFromC(diffPtr), nil
+	return newDiffFromC(diffPtr, v), nil
 }
 
 // DiffBlobs performs a diff between two arbitrary blobs. You can pass
@@ -769,6 +800,8 @@ func DiffBlobs(oldBlob *Blob, oldAsPath string, newBlob *Blob, newAsPath string,
 	defer runtime.UnlockOSThread()
 
 	ecode := C._go_git_diff_blobs(oldBlobPtr, oldBlobPath, newBlobPtr, newBlobPath, copts, 1, intHunks, intLines, handle)
+	runtime.KeepAlive(oldBlob)
+	runtime.KeepAlive(newBlob)
 	if ecode < 0 {
 		return MakeGitError(ecode)
 	}
