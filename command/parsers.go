@@ -1,6 +1,7 @@
 package command
 
 import (
+	"fmt"
 	"net/url"
 	"os"
 	"path"
@@ -27,6 +28,7 @@ func parseURL(str string, defaultHost string, ssh bool) *url.URL {
 		}
 		u.Scheme = "ssh"
 	}
+	u.Path = fmt.Sprintf("%s.git", u.Path)
 	return u
 }
 
